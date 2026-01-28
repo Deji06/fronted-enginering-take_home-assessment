@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 const Header = () => {
   const { assets, prices } = usePortfolioStore();
 
-  // DEFUSE: Derived state using useMemo for performance
+  // Derived state using useMemo for performance
   const stats = useMemo(() => {
     return assets.reduce(
       (acc, asset) => {
