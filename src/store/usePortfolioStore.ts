@@ -1,7 +1,7 @@
 // src/store/usePortfolioStore.ts
 import { create } from 'zustand';
 import type { Asset, PriceMap } from '../types';
-import { MOCK_ASSETS, MOCK_PRICES } from '../mockData';
+import { MOCK_ASSETS} from '../mockData';
 
 interface PortfolioState {
   assets: Asset[];

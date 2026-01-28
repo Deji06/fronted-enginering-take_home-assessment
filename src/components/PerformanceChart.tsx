@@ -16,7 +16,7 @@ const PerformanceChart = () => {
   // Mocking historical data points for the last 7 days
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-  const data = days.map((day, index) => {
+  const data = days.map((day) => {
     const dataPoint: any = { name: day };
     assets.forEach(
       (asset) => {
