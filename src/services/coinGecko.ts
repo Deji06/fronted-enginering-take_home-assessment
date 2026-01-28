@@ -6,12 +6,7 @@ export const fetchLivePrices = async (coinIds: string[]): Promise<PriceMap> => {
   const ids = coinIds.join(',');
    const url = `${BASE_URL}/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h&t=${Date.now()}`;
   
-  const response = await fetch( url, {
-    headers: {
-      'Accept': 'application/json',
-      'Cache-Control': 'no-cache'
-    }
-});
+  const response = await fetch(url);
 
   if (!response.ok) {
     if (response.status === 429) throw new Error('Rate limit exceeded. Try again later.');

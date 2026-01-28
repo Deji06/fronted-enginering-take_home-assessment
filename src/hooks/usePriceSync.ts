@@ -10,8 +10,6 @@ export const usePriceSync = (intervalMs = 30000) => {
     if (assets.length === 0) return;
     
     try {
-      // Don't show global loading spinner on background refreshes 
-      // to avoid "UI Jitter"
       const coinIds = assets.map(a => a.id);
       const newPrices = await fetchLivePrices(coinIds);
       
@@ -25,16 +23,15 @@ export const usePriceSync = (intervalMs = 30000) => {
   };
 
   useEffect(() => {
-    // Initial fetch
     setLoading(true);
     updatePrices();
 
     // Set up polling interval
     timerRef.current = window.setInterval(updatePrices, intervalMs);
 
-    // DEFUSE: Cleanup to prevent memory leaks
+    // Cleanup to prevent memory leaks
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [assets]); // Re-sync if the user's asset list changes
+  }, [assets]);
 };
