@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# Crypto Portfolio Tracker - GreyZone Technical Assessment
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A high-performance, real-time cryptocurrency dashboard designed for financial accuracy, UI resilience, and clear architectural separation.
 
-Currently, two official plugins are available:
+## Architecture Decisions
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. Atomic State Management (Zustand)
+I chose **Zustand** for state management to ensure high-frequency updates don't compromise performance. 
+- **Reasoning:** Unlike Context API, which can cause "provider-wide" re-renders, Zustand allows components to selectively subscribe to state slices. In a crypto app where prices change every few seconds, this granularity is essential for maintaining 60fps UI performance.
 
-## React Compiler
+### 2. Derived State Pattern
+Following the principle of "Single Source of Truth," I intentionally avoided storing calculated values (Total Value, P&L) in the store.
+- **Reasoning:** Storing derived data leads to "Split-Brain" synchronization bugs. Instead, I calculate these values on-the-fly using **useMemo**. This ensures that if a price updates, every dependent calculation updates simultaneously, preventing transient financial inconsistencies.
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+### 3. Component Atomicity & Memoization
+The project uses a memoized row-rendering pattern in the asset list.
+- **Reasoning:** By isolating the `AssetRow` and wrapping it in `React.memo`, I ensure that a price update for "Bitcoin" does not trigger a re-render for the rest of the table.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## State Strategy & Resilience
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+The application explicitly handles the five mandatory system states to ensure a production-ready user experience:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+* **Loading:** Shimmer/Skeleton states are used during the initial data fetch to improve perceived latency.
+* **Error State:** Handles API failures (e.g., CoinGecko 429 Rate Limits) with a dedicated banner and manual retry logic.
+* **Partial Data:** If price fetching fails but asset data is present, the UI displays holdings with a "Partial Data" warning, informing the user that prices are not live.
+* **Stale Data:** A `lastUpdated` timestamp tracks data freshness. If the sync is delayed beyond 75s, a "Stale Data" status banner warns the user of market risk.
+* **Empty State:** A clean "Call to Action" view is rendered if no assets are found in the portfolio.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+##  Trade-offs
+* **Mocked History:** For the performance charts, I implemented a mock historical generator. In a production environment, this would be replaced by the `/market_chart` endpoint, but for this assessment, I prioritized UI stability and rate-limit preservation.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+##  Testing Strategy (Written Explanation)
+
+To ensure financial integrity, the application is designed to be testable across three layers:
+
+### 1. Unit Testing (The Math)
+I focus testing on the **Utility Functions** (`src/utils/finance.ts`). Since these are pure functions, they are tested for:
+* **P&L Calculation:** Validating that `(Current - Cost) / Cost` handles edge cases like a $0$ cost basis and handles floating-point precision correctly
+
+### 2. Integration Testing (The Store)
+Using **Vitest**, I would test the store's "Sync" logic:
+* **API Resilience:** Ensuring that when `fetchLivePrices` returns an error, the store's `error` state is populated and the `loading` state is cleared.
+* **Race Conditions:** Verifying that if multiple refresh actions are fired, only the result of the latest request is applied.
+
+### 3. E2E / Resilience Testing (The UX)
+Using **Playwright**, I would simulate "Unreliable Networks":
+* **Offline Mode:** Verify that the "Stale Data" banner appears exactly 75 seconds after a lost connection.
+* **Recovery:** Verify that when the network returns, the error banners clear automatically on the next successful poll.
+
+---
+
+## 🔮 Future Improvements
+1.  **Persistence:** Adding `zustand/middleware` to persist the wallet to `localStorage`.
+2.  **Web Worker Calculation:** Moving heavy P&L calculations for large portfolios off the main thread.
+3.  **Multi-Currency Denomination:** Adding a toggle to view the entire portfolio in BTC or ETH value instead of just USD.
+
+---
+
+##  Tech Stack
+- **Framework:** React 18 (Vite)
+- **State:** Zustand
+- **Styles:** Tailwind CSS
+- **Charts:** Recharts
+- **API:** CoinGecko V3 (Free Tier)
+
+##  How to Run
+1. Clone the repo
+2. `npm install`
+3. `npm run dev`
