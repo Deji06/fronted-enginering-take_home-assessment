@@ -8,6 +8,8 @@ interface PortfolioState {
   prices: PriceMap;
   loading: boolean;
   error: string | null;
+  lastUpdated:number | null
+
   
   // Actions
   setPrices: (prices: PriceMap) => void;
@@ -16,12 +18,18 @@ interface PortfolioState {
 }
 
 export const usePortfolioStore = create<PortfolioState>((set) => ({
-  assets: MOCK_ASSETS, // Start with mock data
-  prices: MOCK_PRICES,
+  assets: MOCK_ASSETS,
+  prices: {},
   loading: false,
   error: null,
+  lastUpdated: null,
 
-  setPrices: (prices) => set({ prices }),
+setPrices: (prices) => set({ 
+    prices, 
+    lastUpdated: Date.now(),
+    loading: false,
+    error: null 
+  }),
   setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
+  setError: (error) => set({ error, loading: false }),
 }));

@@ -10,6 +10,7 @@ export interface CoinPrice {
   id: string;
   current_price: number;
   price_change_percentage_24h: number;
+  sparkline?: number[];
 }
 
 // Map of coin ID to its current price data
